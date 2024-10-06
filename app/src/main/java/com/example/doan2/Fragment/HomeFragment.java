@@ -10,6 +10,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,7 +28,10 @@ import com.example.doan2.Api.ApiService;
 import com.example.doan2.R;
 import com.example.doan2.model.WeatherRes;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -38,6 +42,8 @@ public class HomeFragment extends Fragment implements LocationListener {
             temperatureTv,humidityTv,pressureTv,lightTv,rainTv,pumpTv,windTv;
     private double lat,lon;
     private LocationManager locationManager;
+    private Handler handler;
+    private Runnable runnable;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
@@ -53,9 +59,27 @@ public class HomeFragment extends Fragment implements LocationListener {
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         } else {
+            setTime();
             setLocation();
         }
         callApi();
+    }
+
+    private void setTime() {
+        handler = new Handler();
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                // Cập nhật thời gian
+                String currentTime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
+                timeTv.setText("Update at : " + currentTime);
+                handler.postDelayed(this, 1000);
+            }
+        };
+
+        if (handler != null) {
+            handler.post(runnable); // Đảm bảo handler không null trước khi gọi post
+        }
     }
 
     private void callApi() {
@@ -124,5 +148,11 @@ public class HomeFragment extends Fragment implements LocationListener {
     @Override
     public void onProviderDisabled(@NonNull String provider) {
         LocationListener.super.onProviderDisabled(provider);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks(runnable);
     }
 }

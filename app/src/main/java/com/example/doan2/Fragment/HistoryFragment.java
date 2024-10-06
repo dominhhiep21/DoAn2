@@ -42,10 +42,7 @@ public class HistoryFragment extends Fragment {
 
     private List<Item> initData() {
         List<Item> items = new ArrayList<>();
-        items.add(new Item(0,"10/3/2021","Hanoi",20,70));
-        items.add(new Item(0,"10/3/2022","Hanoi",30,70));
-        items.add(new Item(0,"10/3/2021","Hanoi",20,70));
-        items.add(new Item(0,"10/3/2022","Hanoi",36,60));
+        items.add(new Item(0,"10:59","21/10/2003","Hanoi",20,70));
         return items;
     }
 }

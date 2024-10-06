@@ -3,6 +3,7 @@ package com.example.doan2.model;
 public class Item {
     private int id;
     private String time;
+    private String date;
     private String location;
     private int temperature;
     private int humidity;
@@ -10,9 +11,10 @@ public class Item {
     public Item() {
     }
 
-    public Item(int id, String time, String location, int temperature, int humidity) {
+    public Item(int id, String time, String date, String location, int temperature, int humidity) {
         this.id = id;
         this.time = time;
+        this.date = date;
         this.location = location;
         this.temperature = temperature;
         this.humidity = humidity;
