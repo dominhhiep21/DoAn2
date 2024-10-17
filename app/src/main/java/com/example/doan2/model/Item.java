@@ -3,21 +3,36 @@ package com.example.doan2.model;
 public class Item {
     private int id;
     private String time;
-    private String date;
     private String location;
     private int temperature;
     private int humidity;
-
+    private int pump;
     public Item() {
     }
 
-    public Item(int id, String time, String date, String location, int temperature, int humidity) {
-        this.id = id;
+    public Item(String time, String location, int temperature, int humidity, int pump) {
         this.time = time;
-        this.date = date;
         this.location = location;
         this.temperature = temperature;
         this.humidity = humidity;
+        this.pump = pump;
+    }
+
+    public Item(int id, String time, String location, int temperature, int humidity, int pump) {
+        this.id = id;
+        this.time = time;
+        this.location = location;
+        this.temperature = temperature;
+        this.humidity = humidity;
+        this.pump = pump;
+    }
+
+    public int getPump() {
+        return pump;
+    }
+
+    public void setPump(int pump) {
+        this.pump = pump;
     }
 
     public int getId() {

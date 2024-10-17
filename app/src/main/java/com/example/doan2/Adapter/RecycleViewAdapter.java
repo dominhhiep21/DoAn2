@@ -18,7 +18,7 @@ import java.util.List;
 public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.ItemViewHolder> {
     private Context mContext;
     private List<Item> mList;
-
+    private ItemListener itemListener;
     public RecycleViewAdapter(Context mContext) {
         this.mContext = mContext;
         this.mList = new ArrayList<>();
@@ -26,6 +26,9 @@ public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.
     public void setData(List<Item> list){
         this.mList = list;
         notifyDataSetChanged();
+    }
+    public void setItemListener(ItemListener itemListener){
+        this.itemListener = itemListener;
     }
     @NonNull
     @Override
@@ -40,8 +43,13 @@ public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.
         if(item==null) return;
         holder.timeItemTv.setText(item.getTime());
         holder.locationItemTv.setText(item.getLocation());
-        holder.tempItemTv.setText(item.getTemperature()+"℃");
-        holder.humItemTv.setText(item.getHumidity()+"%");
+        holder.tempTv.setText("Temp:"+item.getTemperature()+"℃");
+        holder.humiTv.setText("Humi:"+item.getHumidity()+"%");
+        if(item.getPump()==1){
+            holder.pumpTv.setText("Pump:ON");
+        } else if (item.getPump()==0) {
+            holder.pumpTv.setText("Pump:OFF");
+        }
     }
 
     @Override
@@ -51,14 +59,26 @@ public class RecycleViewAdapter extends RecyclerView.Adapter<RecycleViewAdapter.
         return 0;
     }
 
-    public class ItemViewHolder extends RecyclerView.ViewHolder{
-        private TextView timeItemTv,locationItemTv,tempItemTv,humItemTv;
+    public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+        private TextView timeItemTv,locationItemTv,tempTv,humiTv,pumpTv;
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
             timeItemTv = itemView.findViewById(R.id.time_item);
             locationItemTv = itemView.findViewById(R.id.location_item);
-            tempItemTv = itemView.findViewById(R.id.temperature_item);
-            humItemTv = itemView.findViewById(R.id.humidity_item);
+            tempTv = itemView.findViewById(R.id.temp_item);
+            humiTv = itemView.findViewById(R.id.humi_item);
+            pumpTv = itemView.findViewById(R.id.pump_item);
+        }
+
+        @Override
+        public void onClick(View v) {
+            if(itemListener!=null){
+                itemListener.onItemListener(v,getAdapterPosition());
+            }
         }
     }
+    public interface ItemListener{
+        void onItemListener(View view,int position);
+    }
 }
+
