@@ -23,14 +23,12 @@ import java.util.Locale;
 public class MqttHandler {
 
     private MqttClient client;
-    private SQLiteHelper sqLiteHelper;
-    private Handler handler = new Handler();
     private int temperature, humidity, rain, light,pressure,pump;
     private OnMessageReceivedListener messageReceivedListener;
-
-    public MqttHandler(Context context) {
-        sqLiteHelper = new SQLiteHelper(context,"Data.db",null,1);
-    }
+    private String brokerUrl;
+    private String clientId;
+    private int reconnectAttempts = 0;
+    private static final int MAX_RECONNECT_ATTEMPTS = 5;
 
     public interface OnMessageReceivedListener {
         void onMessageReceived(int temperature,int humidity,int rain ,int light,int pressure,int pump);
@@ -40,11 +38,11 @@ public class MqttHandler {
         this.messageReceivedListener = listener;
     }
     public void connect(String brokerUrl, String clientId) {
+        this.brokerUrl = brokerUrl;
+        this.clientId = clientId;
         try {
-            // Set up the persistence layer
             MemoryPersistence persistence = new MemoryPersistence();
 
-            // Initialize the MQTT client
             client = new MqttClient(brokerUrl, clientId, persistence);
 
             // Set up the connection options
@@ -54,7 +52,6 @@ public class MqttHandler {
             // Connect to the broker
             client.connect(connectOptions);
             callback();
-            //startSavingData();
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -129,23 +126,17 @@ public class MqttHandler {
             }
         });
     }
-    private void startSavingData() {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // Lấy thời gian hiện tại và chuyển thành chuỗi
-                String timestamp = getCurrentTimestamp();
-
-                // Lưu dữ liệu vào SQLite cùng với thời gian
-                sqLiteHelper.addItem(new Item(timestamp,"Hanoi",temperature,humidity,pump));
-
-                // Lặp lại mỗi 5 phút
-                handler.postDelayed(this, 60 * 1000); // 5 phút
+    public void reconnect() {
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            try {
+                Thread.sleep(2000);  // Đợi 2 giây trước khi thử kết nối lại
+                connect(brokerUrl, clientId);  // Thử kết nối lại
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }, 60 * 1000); // 5 phút
-    }
-    private String getCurrentTimestamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-        return sdf.format(new Date());
+        } else {
+            System.out.println("Max reconnect attempts reached. Could not reconnect.");
+        }
     }
 }

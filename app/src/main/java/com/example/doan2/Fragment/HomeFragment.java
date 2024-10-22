@@ -11,6 +11,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -81,20 +82,20 @@ public class HomeFragment extends Fragment implements LocationListener {
     }
 
     private void connectMQTT() {
-        mqttHandler = new MqttHandler(getContext());
+        mqttHandler = new MqttHandler();
         mqttHandler.connect(BROKER_URL,CLIENT_ID);
         mqttHandler.subscribe("esp32/led");
-        mqttHandler.subscribe("esp32/relay");
+        //mqttHandler.subscribe("esp32/relay");
         pumpIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String currentTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",
                         Locale.getDefault()).format(new Date());
                 if(pumpTv.getText().equals("ON")){
-                    publishMessage("esp32/relay","0");
+                    publishMessage("esp32/led","0");
                     pumpTv.setText("OFF");
                 }else if(pumpTv.getText().equals("OFF")){
-                    publishMessage("esp32/relay","1");
+                    publishMessage("esp32/led","1");
                     pumpTv.setText("ON");
                 }
                 int temp = Integer.parseInt(temperatureTv.getText().toString().replace("℃",""));
@@ -106,13 +107,18 @@ public class HomeFragment extends Fragment implements LocationListener {
                     pumpStatus = 0;
                 }
                 String locat = locationTv.getText().toString();
-                sqLiteHelper.addItem(new Item(currentTime,locat,temp,humi,pumpStatus));
+                try {
+                    sqLiteHelper.addItem(new Item(currentTime,locat,temp,humi,pumpStatus));
+                }catch (Exception e){
+                    Toast.makeText(getContext(), "Save data failed !!!", Toast.LENGTH_SHORT).show();
+                }
             }
         });
         mqttHandler.setOnMessageReceivedListener(new MqttHandler.OnMessageReceivedListener() {
             @Override
             public void onMessageReceived(int temperature, int humidity, int rain, int light,int pressure,int pump) {
                 temperatureTv.setText(temperature+"℃");
+                Log.e("Message: ",""+temperature);
                 humidityTv.setText(humidity+"%");
                 pressureTv.setText((pressure/1000)+" kPa");
                 if(rain==0){
@@ -142,7 +148,6 @@ public class HomeFragment extends Fragment implements LocationListener {
         runnable = new Runnable() {
             @Override
             public void run() {
-                // Cập nhật thời gian
                 String currentTime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
                 timeTv.setText("Update at : " + currentTime);
                 handler.postDelayed(this, 1000);
@@ -150,7 +155,7 @@ public class HomeFragment extends Fragment implements LocationListener {
         };
 
         if (handler != null) {
-            handler.post(runnable); // Đảm bảo handler không null trước khi gọi post
+            handler.post(runnable);
         }
     }
 
@@ -182,7 +187,6 @@ public class HomeFragment extends Fragment implements LocationListener {
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);
     }
-
     private void initView(View view) {
         locationTv = view.findViewById(R.id.location);
         timeTv = view.findViewById(R.id.time);
