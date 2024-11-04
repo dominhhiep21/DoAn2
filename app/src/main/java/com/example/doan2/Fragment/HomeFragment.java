@@ -45,10 +45,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeFragment extends Fragment implements LocationListener {
-    private TextView locationTv,timeTv,statusTv,
-            temperatureTv,humidityTv,pressureTv,lightTv,rainTv,pumpTv,windTv;
+    private TextView locationTv, timeTv, statusTv, temperatureTv, humidityTv, pressureTv, lightTv, rainTv, pumpTv, windTv;
     private ImageView pumpIcon;
-    private double lat,lon;
+    private double lat, lon;
     private LocationManager locationManager;
     private Handler handler;
     private Runnable runnable;
@@ -57,10 +56,11 @@ public class HomeFragment extends Fragment implements LocationListener {
     private MqttHandler mqttHandler;
     private ExecutorService executorService;
     private SQLiteHelper sqLiteHelper;
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.home_fragment,container,false);
+        View view = inflater.inflate(R.layout.home_fragment, container, false);
         return view;
     }
 
@@ -68,7 +68,7 @@ public class HomeFragment extends Fragment implements LocationListener {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         executorService = Executors.newSingleThreadExecutor();
-        sqLiteHelper = new SQLiteHelper(getContext(),"Data.db",null,1);
+        sqLiteHelper = new SQLiteHelper(getContext(), "Data.db", null, 1);
         initView(view);
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -77,69 +77,89 @@ public class HomeFragment extends Fragment implements LocationListener {
             setTime();
             setLocation();
         }
-        callApi();
         connectMQTT();
     }
 
     private void connectMQTT() {
         mqttHandler = new MqttHandler();
-        mqttHandler.connect(BROKER_URL,CLIENT_ID);
-        mqttHandler.subscribe("esp32/led");
-        //mqttHandler.subscribe("esp32/relay");
+        handler = new Handler();
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!mqttHandler.isConnected()) {
+                    Log.e("MQTT", "Connection lost. Reconnecting...");
+                    mqttHandler.connect(BROKER_URL, CLIENT_ID);
+                    mqttHandler.subscribe("nhom8/sensor");
+                }
+                handler.postDelayed(this, 5000); // Kiểm tra lại sau 5 giây
+            }
+        };
+        handler.post(runnable);
+
         pumpIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String currentTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",
                         Locale.getDefault()).format(new Date());
-                if(pumpTv.getText().equals("ON")){
-                    publishMessage("esp32/led","0");
+                if (pumpTv.getText().equals("ON")) {
+                    publishMessage("nhom8/sensor", "0");
                     pumpTv.setText("OFF");
-                }else if(pumpTv.getText().equals("OFF")){
-                    publishMessage("esp32/led","1");
+                } else if (pumpTv.getText().equals("OFF")) {
+                    publishMessage("nhom8/sensor", "1");
                     pumpTv.setText("ON");
                 }
-                int temp = Integer.parseInt(temperatureTv.getText().toString().replace("℃",""));
-                int humi = Integer.parseInt(humidityTv.getText().toString().replace("%",""));
+                int temp = Integer.parseInt(temperatureTv.getText().toString().replace("℃", ""));
+                int humi = Integer.parseInt(humidityTv.getText().toString().replace("%", ""));
                 int pumpStatus = 0;
-                if(pumpTv.getText().toString().equals("ON")){
+                if (pumpTv.getText().toString().equals("ON")) {
                     pumpStatus = 1;
                 } else if (pumpTv.getText().toString().equals("OFF")) {
                     pumpStatus = 0;
                 }
                 String locat = locationTv.getText().toString();
                 try {
-                    sqLiteHelper.addItem(new Item(currentTime,locat,temp,humi,pumpStatus));
-                }catch (Exception e){
+                    sqLiteHelper.addItem(new Item(currentTime, locat, temp, humi, pumpStatus));
+                } catch (Exception e) {
                     Toast.makeText(getContext(), "Save data failed !!!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
         mqttHandler.setOnMessageReceivedListener(new MqttHandler.OnMessageReceivedListener() {
             @Override
-            public void onMessageReceived(int temperature, int humidity, int rain, int light,int pressure,int pump) {
-                temperatureTv.setText(temperature+"℃");
-                Log.e("Message: ",""+temperature);
-                humidityTv.setText(humidity+"%");
-                pressureTv.setText((pressure/1000)+" kPa");
-                if(rain==0){
-                    rainTv.setText("YES");
-                } else if (rain==1) {
-                    rainTv.setText("NO");
-                }
-                if(light==1){
-                    lightTv.setText("NO");
-                } else if (light==0) {
-                    lightTv.setText("YES");
-                }
+            public void onMessageReceived(int temperature, int humidity, int rain, int light, int pressure, int pump) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        temperatureTv.setText(temperature + "℃");
+                        humidityTv.setText(humidity + "%");
+                        pressureTv.setText((pressure / 1000) + " kPa");
+                        if (rain == 0) {
+                            rainTv.setText("YES");
+                        } else if (rain == 1) {
+                            rainTv.setText("NO");
+                        }
+                        if (light == 0) {
+                            lightTv.setText("YES");
+                        } else if (light == 1) {
+                            lightTv.setText("NO");
+                        }
+//                        if (pump == 1) {
+//                            pumpTv.setText("ON");
+//                        } else if (pump == 0) {
+//                            pumpTv.setText("OFF");
+//                        }
+                    }
+                });
             }
         });
     }
 
     private void publishMessage(final String topic, final String message) {
-        mqttHandler.publish(topic,message);
+        mqttHandler.publish(topic, message);
     }
 
-    private void subscribeToTopic(String topic){
+    private void subscribeToTopic(String topic) {
         mqttHandler.subscribe(topic);
     }
 
@@ -160,15 +180,16 @@ public class HomeFragment extends Fragment implements LocationListener {
     }
 
     private void callApi() {
-        ApiService.apiService.getData(lat,lon,"cd43023033fba323c69a16922df80e5d").enqueue(new Callback<WeatherRes>() {
+        ApiService.apiService.getData(lat, lon, "cd43023033fba323c69a16922df80e5d").enqueue(new Callback<WeatherRes>() {
             @Override
             public void onResponse(Call<WeatherRes> call, Response<WeatherRes> response) {
                 WeatherRes weatherRes = response.body();
-                if(weatherRes!=null){
-                    windTv.setText(weatherRes.getWind().getSpeed()+" m/s");
+                if (weatherRes != null) {
+                    windTv.setText(weatherRes.getWind().getSpeed() + " m/s");
                     //pressureTv.setText(weatherRes.getMain().getPressure()+" hPa");
                     statusTv.setText(weatherRes.getWeather().get(0).getMain());
                     locationTv.setText(weatherRes.getName());
+                    Log.e("Location", "" + weatherRes.getName());
                 }
             }
 
@@ -187,6 +208,7 @@ public class HomeFragment extends Fragment implements LocationListener {
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, this);
     }
+
     private void initView(View view) {
         locationTv = view.findViewById(R.id.location);
         timeTv = view.findViewById(R.id.time);
@@ -204,7 +226,10 @@ public class HomeFragment extends Fragment implements LocationListener {
     @Override
     public void onLocationChanged(@NonNull Location location) {
         lat = location.getLatitude();
+        Log.e("Lat:", "" + lat);
         lon = location.getLongitude();
+        Log.e("Lon:", "" + lon);
+        callApi();
     }
 
     @Override
@@ -235,3 +260,4 @@ public class HomeFragment extends Fragment implements LocationListener {
         executorService.shutdown();
     }
 }
+
