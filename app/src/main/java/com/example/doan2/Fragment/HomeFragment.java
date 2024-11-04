@@ -109,7 +109,7 @@ public class HomeFragment extends Fragment implements LocationListener {
                     pumpTv.setText("ON");
                 }
                 int temp = Integer.parseInt(temperatureTv.getText().toString().replace("℃", ""));
-                int humi = Integer.parseInt(humidityTv.getText().toString().replace("%", ""));
+                double humi = Double.parseDouble(humidityTv.getText().toString().replace("%", ""));
                 int pumpStatus = 0;
                 if (pumpTv.getText().toString().equals("ON")) {
                     pumpStatus = 1;
@@ -127,7 +127,7 @@ public class HomeFragment extends Fragment implements LocationListener {
 
         mqttHandler.setOnMessageReceivedListener(new MqttHandler.OnMessageReceivedListener() {
             @Override
-            public void onMessageReceived(int temperature, int humidity, int rain, int light, int pressure, int pump) {
+            public void onMessageReceived(int temperature, double humidity, int rain, int light, int pressure, int pump) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

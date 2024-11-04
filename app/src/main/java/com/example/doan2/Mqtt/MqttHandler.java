@@ -16,7 +16,8 @@ import org.json.JSONObject;
 public class MqttHandler {
 
     private MqttClient client;
-    private int temperature, humidity, rain, light, pressure, pump;
+    private int temperature, rain, light, pressure, pump;
+    private double humidity;
     private OnMessageReceivedListener messageReceivedListener;
     private String brokerUrl;
     private String clientId;
@@ -26,7 +27,7 @@ public class MqttHandler {
     private Runnable reconnectRunnable;
 
     public interface OnMessageReceivedListener {
-        void onMessageReceived(int temperature, int humidity, int rain, int light, int pressure, int pump);
+        void onMessageReceived(int temperature, double humidity, int rain, int light, int pressure, int pump);
     }
 
     public void setOnMessageReceivedListener(OnMessageReceivedListener listener) {
@@ -80,7 +81,7 @@ public class MqttHandler {
                 try {
                     JSONObject jsonData = new JSONObject(payload);
                     temperature = jsonData.getInt("temperature");
-                    humidity = jsonData.getInt("humidity");
+                    humidity = jsonData.getDouble("humidity");
                     rain = jsonData.getInt("rain");
                     light = jsonData.getInt("light");
                     pressure = jsonData.getInt("pressure");

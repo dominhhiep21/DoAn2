@@ -5,12 +5,12 @@ public class Item {
     private String time;
     private String location;
     private int temperature;
-    private int humidity;
+    private double humidity;
     private int pump;
     public Item() {
     }
 
-    public Item(String time, String location, int temperature, int humidity, int pump) {
+    public Item(String time, String location, int temperature, double humidity, int pump) {
         this.time = time;
         this.location = location;
         this.temperature = temperature;
@@ -18,7 +18,7 @@ public class Item {
         this.pump = pump;
     }
 
-    public Item(int id, String time, String location, int temperature, int humidity, int pump) {
+    public Item(int id, String time, String location, int temperature, double humidity, int pump) {
         this.id = id;
         this.time = time;
         this.location = location;
@@ -67,7 +67,7 @@ public class Item {
         this.temperature = temperature;
     }
 
-    public int getHumidity() {
+    public double getHumidity() {
         return humidity;
     }
 

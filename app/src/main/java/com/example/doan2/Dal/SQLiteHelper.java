@@ -25,7 +25,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
         String sql = "CREATE TABLE data ("+
                 "id INTEGER PRIMARY KEY AUTOINCREMENT,"+
                 "time TEXT,location TEXT,temperature INTEGER," +
-                "humidity INTEGER,pump INTEGER)";
+                "humidity REAL,pump INTEGER)";
         db.execSQL(sql);
     }
 
@@ -50,7 +50,7 @@ public class SQLiteHelper extends SQLiteOpenHelper {
             String time = rs.getString(1);
             String location = rs.getString(2);
             int temp = rs.getInt(3);
-            int humi = rs.getInt(4);
+            double humi = rs.getInt(4);
             int pump = rs.getInt(5);
             list.add(new Item(id,time,location,temp,humi,pump));
         }
